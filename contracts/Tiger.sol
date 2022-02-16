@@ -24,7 +24,17 @@ contract Tiger is ERC721URIStorage,Ownable{
 
     //blessing status
     enum Status{
-        Init,Zore,Twelve,TwentyFour,ThirtySix,FoutyEight,Sixty,SeventyTwo,EighttyFour,NinetySix,NotTiger
+        Init,
+        Zore,
+        Twelve,
+        TwentyFour,
+        ThirtySix,
+        FoutyEight,
+        Sixty,
+        SeventyTwo,
+        EighttyFour,
+        NinetySix,
+        NotTiger
     }
 
     //mint begin time
@@ -75,7 +85,7 @@ contract Tiger is ERC721URIStorage,Ownable{
     }
 
     /**
-    * @dev mint tiger NFT and init status
+    * @dev mint tiger NFT and initialize status
      */
     function mint()
     public notMinted {
@@ -101,7 +111,8 @@ contract Tiger is ERC721URIStorage,Ownable{
     *@param tokenId specific tokenId user owned
     *@return status generated for user
      */
-    function interact(uint256 year, uint256 tokenId) public notInteracted(tokenId) returns(Status){
+    function interact(uint256 year, uint256 tokenId)
+    public notInteracted(tokenId) returns(Status) {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "not owner nor approved");
         interacted[tokenId][_msgSender()] == true;
         (uint cycle,uint zodiac) = ((2022-year) / 12,(2022 - year) % 12);
@@ -131,7 +142,8 @@ contract Tiger is ERC721URIStorage,Ownable{
         return blessings[_msgSender()];
     }
 
-    function tokenURI(uint256 tokenId) public view override returns(string memory){
+    function tokenURI(uint256 tokenId)
+    public view override returns(string memory) {
         require(ownerOf(tokenId) != address(0), "token not exist");
         return "";
     }
