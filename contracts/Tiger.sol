@@ -24,6 +24,7 @@ contract Tiger is ERC721URIStorage,Ownable{
 
     //blessing status
     enum Status{
+        Null,
         Init,
         Zore,
         Twelve,
@@ -36,6 +37,12 @@ contract Tiger is ERC721URIStorage,Ownable{
         NinetySix,
         NotTiger
     }
+
+    //tiger year begin
+    int[] yearBegin = [int(-2142633600),-1765065600,-1384819200,-1007251200,-627091200,-249436800,128131200,508291200,885945600,1266105600,1643673600,2023920000,2401488000,2779056000,3159302400,3536870400,3917030400];
+
+    //tiger year end
+    int[] yearEnd = [int(-2111990400),-1731916800,-1354262400,-974102400,-596534400,-218880000,161280000,538848000,919094400,1296662400,1674316800,2054476800,2432044800,2812204800,3189859200,3570019200,3947673600];
 
     //mint begin time
     uint256 mintBegin = 1648252800;
@@ -78,8 +85,7 @@ contract Tiger is ERC721URIStorage,Ownable{
     /**
     *@dev add address to whitelist map
      */
-    function addWhitelist(address to)
-    external onlyOwner {
+    function addWhitelist(address to) external onlyOwner {
         require(to!=address(0),"invalid address");
         whitelist[to] = true;
     }
@@ -87,8 +93,7 @@ contract Tiger is ERC721URIStorage,Ownable{
     /**
     * @dev mint tiger NFT and initialize status
      */
-    function mint()
-    public notMinted {
+    function mint() public notMinted {
         if(block.timestamp >= whitelistBegin || block.timestamp <= whitelistEnd){
             require(whitelist[_msgSender()] == true,"caller is not in whitelist");
             _safeMint(_msgSender(),counter);
@@ -111,12 +116,11 @@ contract Tiger is ERC721URIStorage,Ownable{
     *@param tokenId specific tokenId user owned
     *@return status generated for user
      */
-    function interact(uint256 year, uint256 tokenId)
-    public notInteracted(tokenId) returns(Status) {
+    function interact(uint256 year, uint256 tokenId) public notInteracted(tokenId) returns(Status) {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "not owner nor approved");
         interacted[tokenId][_msgSender()] == true;
-        (uint cycle,uint zodiac) = ((2022-year) / 12,(2022 - year) % 12);
-        if (zodiac != 0){
+        (uint cycle,uint remainder) = ((2022-year) / 12,(2022 - year) % 12);
+        if (remainder != 0){
             blessings[_msgSender()] = Status.NotTiger;
         }else if(cycle == 0){
             blessings[_msgSender()] = Status.Zore;
@@ -142,9 +146,18 @@ contract Tiger is ERC721URIStorage,Ownable{
         return blessings[_msgSender()];
     }
 
-    function tokenURI(uint256 tokenId)
-    public view override returns(string memory) {
+    function getTokenURI(uint256 tokenId) public view returns(Status) {
         require(ownerOf(tokenId) != address(0), "token not exist");
-        return "";
+        for(uint i = 0; i < 16; i++){
+            if(int(block.timestamp) >= yearBegin[i] || int(block.timestamp) <= yearEnd[i]){
+                return blessings[_msgSender()];
+            } else {
+                if(interacted[tokenId][_msgSender()]){
+                    return Status.NinetySix;
+                }else {
+                    return Status.Init;
+                }
+            }
+        }
     }
 }
