@@ -107,6 +107,7 @@ contract Tiger is ERC721URIStorage,Ownable{
         minted[_msgSender()] = true;
         counter += 1;
     }
+    
     /**
     * @dev mint tiger NFT and initialize status
      */
