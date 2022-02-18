@@ -20,7 +20,7 @@ contract Tiger is ERC721URIStorage,Ownable{
     mapping(address => bool) minted;
 
     //check if address has interacted or not
-    mapping (uint256 => mapping(address => bool)) interacted;
+    mapping (uint256 => bool) interacted;
 
     //mapping tokenId to blessings
     mapping (uint256 => string) blessings;
@@ -47,7 +47,7 @@ contract Tiger is ERC721URIStorage,Ownable{
     string[] private status = ["Init","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","NotTiger"];
 
     //tiger year begin
-    int[] yearBegin = [int(-2142633600),-1765065600,-1384819200,-1007251200,-627091200,-249436800,128131200,508291200,885945600,1266105600,1643673600,2023920000,2401488000,2779056000,3159302400,3536870400,3917030400];
+    int[] yearBegin = [int(-2142633600),-1765065600,-1384819200,-1007251200,-627091200,-249436800,128131200,508291200,885945600,1266105600,1643673600,2023920000,2401488000,2779056000,3159302400,3536870400,3917030400,4294684800];
 
     //tiger year end
     int[] yearEnd = [int(-2111990400),-1731916800,-1354262400,-974102400,-596534400,-218880000,161280000,538848000,919094400,1296662400,1674316800,2054476800,2432044800,2812204800,3189859200,3570019200,3947673600];
@@ -87,7 +87,7 @@ contract Tiger is ERC721URIStorage,Ownable{
     *@param tokenId tokenId that msg.sender owned
      */
     modifier notInteracted(uint tokenId){
-        require(interacted[tokenId][_msgSender()] == false);
+        require(interacted[tokenId] == false);
         _;
     }
     
@@ -130,7 +130,7 @@ contract Tiger is ERC721URIStorage,Ownable{
      */
     function interact(uint256 year, uint256 tokenId) public notInteracted(tokenId) returns(string memory) {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "not owner nor approved");
-        interacted[tokenId][_msgSender()] = true;
+        interacted[tokenId] = true;
         (uint cycle,uint remainder) = ((2022-year) / 12,(2022 - year) % 12);
         if (remainder != 0){
             blessings[tokenId] = status[10];
@@ -182,7 +182,7 @@ contract Tiger is ERC721URIStorage,Ownable{
             '","image":"',
             image[i],
             '","description":"tiger year nft","attributes":[{"trait_type":"status","value":"',
-            status[i],
+            blessings[tokenId],
             '"}]}'
         )
         )
@@ -194,18 +194,20 @@ contract Tiger is ERC721URIStorage,Ownable{
 
     function tokenURI(uint256 tokenId) public override view returns(string memory) {
         require(ownerOf(tokenId) != address(0), "token not exist");
-        for(uint i = 0; i < 16; i++){
+        for(uint i = 0; i < yearEnd.length; i++){
             if(int(block.timestamp) >= yearBegin[i] && int(block.timestamp) <= yearEnd[i]){
                 return calJson(tokenId,index[tokenId]);
-            } else {
-                if(interacted[tokenId][_msgSender()]){
+            } else if (int(block.timestamp) > yearEnd[i] && int(block.timestamp) < yearBegin[i+1]){
+                if(interacted[tokenId]){
                     return calJson(tokenId,9);
                 }else {
                     return calJson(tokenId,0);
                 }
+            } else {
+                continue;
             }
         }
-        return "";
+        return calJson(tokenId,0);
     }
 
     function _afterTokenTransfer(
@@ -213,7 +215,7 @@ contract Tiger is ERC721URIStorage,Ownable{
         address to,
         uint256 tokenId
     ) internal override {
-        interacted[tokenId][from] = false;
+        interacted[tokenId] = false;
         blessings[tokenId] = status[0];
         index[tokenId] = 0;
     }
@@ -239,5 +241,10 @@ contract Tiger is ERC721URIStorage,Ownable{
 
     function getTime() public view returns(uint){
         return block.timestamp;
+    }
+
+    function withdraw(uint amout) public onlyOwner {
+        require(address(this).balance >= amout);
+        payable(msg.sender).transfer(amout);
     }
 }
