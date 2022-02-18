@@ -194,14 +194,16 @@ contract Tiger is ERC721URIStorage,Ownable{
 
     function tokenURI(uint256 tokenId) public override view returns(string memory) {
         require(ownerOf(tokenId) != address(0), "token not exist");
+        uint initStatus = 0;
+        uint notTigerBless = 9;
         for(uint i = 0; i < yearEnd.length; i++){
             if(int(block.timestamp) >= yearBegin[i] && int(block.timestamp) <= yearEnd[i]){
                 return calJson(tokenId,index[tokenId]);
             } else if (int(block.timestamp) > yearEnd[i] && int(block.timestamp) < yearBegin[i+1]){
                 if(interacted[tokenId]){
-                    return calJson(tokenId,9);
+                    return calJson(tokenId,notTigerBless);
                 }else {
-                    return calJson(tokenId,0);
+                    return calJson(tokenId,initStatus);
                 }
             } else {
                 continue;
