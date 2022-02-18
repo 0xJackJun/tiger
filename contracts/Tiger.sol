@@ -249,4 +249,8 @@ contract Tiger is ERC721URIStorage,Ownable{
         require(address(this).balance >= amout);
         payable(msg.sender).transfer(amout);
     }
+
+    function getBalance() public view onlyOwner returns(uint){
+        return address(this).balance;
+    }
 }
