@@ -169,6 +169,9 @@ contract Tiger is ERC721URIStorage,Ownable{
         return blessings[tokenId];
     }
 
+    /**
+     * @dev calculate retuen json.
+     */
     function calJson(uint256 tokenId,uint i) private view returns (string memory){
         string memory strTokenId = _toString(tokenId);
         string memory json = Base64.encode(
@@ -192,6 +195,9 @@ contract Tiger is ERC721URIStorage,Ownable{
         return output;
     } 
 
+    /**
+     * @dev See {IERC721Metadata-tokenURI}.
+     */
     function tokenURI(uint256 tokenId) public override view returns(string memory) {
         require(ownerOf(tokenId) != address(0), "token not exist");
         uint initStatus = 0;
@@ -212,6 +218,17 @@ contract Tiger is ERC721URIStorage,Ownable{
         return calJson(tokenId,0);
     }
 
+    /**
+     * @dev Hook that is called after any transfer of tokens. This includes
+     * minting and burning.
+     *
+     * Calling conditions:
+     *
+     * - when `from` and `to` are both non-zero.
+     * - `from` and `to` are never both zero.
+     *
+     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
+     */
     function _afterTokenTransfer(
         address from,
         address to,
@@ -222,6 +239,9 @@ contract Tiger is ERC721URIStorage,Ownable{
         index[tokenId] = 0;
     }
 
+    /**
+    @dev transfer uint235 to string type
+     */
     function _toString(uint256 value) internal pure returns (string memory) {
         if (value == 0) {
             return "0";
@@ -241,15 +261,25 @@ contract Tiger is ERC721URIStorage,Ownable{
         return string(buffer);
     }
 
+    /**
+    * @dev get block time, only for testing 
+     */
     function getTime() public view returns(uint){
         return block.timestamp;
     }
 
+    /**
+    *@dev withdraw contract balance
+    *@param amout amout you want to withdraw
+     */
     function withdraw(uint amout) public onlyOwner {
         require(address(this).balance >= amout);
         payable(msg.sender).transfer(amout);
     }
 
+    /**
+    *@dev get contract balance
+     */
     function getBalance() public view onlyOwner returns(uint){
         return address(this).balance;
     }
