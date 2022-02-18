@@ -40,7 +40,7 @@ contract Tiger is ERC721URIStorage,Ownable{
         'https://arweave.net/CN722GXJbVTKeEzunsD0-lrTso2Zp-z_m4O6DPuj5s0',
         'https://arweave.net/_PH2KEAOJyLQ2qHHaPKA_gItxC9yLF2uLzT4MpxFtoA',
         'https://arweave.net/ew-vjO2gXu134J2USd5eGfeV9FbNcn5TcejpaKw4Y2A',
-        'https://arweave.net/_I0gUOAn0Ym3h8JXl8M_ZyNASzrNjLPGvZU29x-CGBY'
+        'https://arweave.net/6q1xDOWCrTqterOM9W5VzS02UQWaZDIN6gZpMtfQVLQ'
     ];
 
     //blessing status
@@ -53,13 +53,14 @@ contract Tiger is ERC721URIStorage,Ownable{
     int[] yearEnd = [int(-2111990400),-1731916800,-1354262400,-974102400,-596534400,-218880000,161280000,538848000,919094400,1296662400,1674316800,2054476800,2432044800,2812204800,3189859200,3570019200,3947673600];
 
     //mint begin time
-    uint256 mintBegin = 1648252800;
+    uint256 mintBegin = 0;
 
     //whitelist end time
-    uint256 whitelistEnd = 1647957600;
+    uint256 whitelistEnd = 1647950400;
 
     //whitelist begin time
-    uint256 whitelistBegin = 1647950400;
+    uint256 whitelistBegin = 1641957600;
+    
 
     constructor(string memory _name, string memory _symbol) 
     ERC721(_name,_symbol)
@@ -93,29 +94,29 @@ contract Tiger is ERC721URIStorage,Ownable{
     /**
     *@dev add address to whitelist map
      */
-    function addWhitelist(address to) external onlyOwner {
-        require(to!=address(0),"invalid address");
-        whitelist[to] = true;
+    function addWhitelist(address[] memory list) external onlyOwner {
+        for (uint i = 0; i < list.length; i++) {
+            whitelist[list[i]] = true;
+        }
     }
 
+    function initAndMint() private{
+        _safeMint(_msgSender(),counter);
+        blessings[counter] = status[0];
+        index[counter] = 0;
+        minted[_msgSender()] = true;
+        counter += 1;
+    }
     /**
     * @dev mint tiger NFT and initialize status
      */
     function mint() public payable notMinted {
         require(msg.value == price);
-        if(block.timestamp >= whitelistBegin || block.timestamp <= whitelistEnd){
+        if(block.timestamp >= whitelistBegin && block.timestamp <= whitelistEnd){
             require(whitelist[_msgSender()] == true,"caller is not in whitelist");
-            _safeMint(_msgSender(),counter);
-            blessings[counter] = status[0];
-            index[counter] = 0;
-            minted[_msgSender()] = true;
-            counter += 1;
+            initAndMint();
         } else if (block.timestamp >= mintBegin) {
-            _safeMint(_msgSender(),counter);
-            blessings[counter] = status[0];
-            index[counter] = 0;
-            minted[_msgSender()] = true;
-            counter += 1;
+            initAndMint();
         } else {
             revert();
         }
@@ -129,7 +130,7 @@ contract Tiger is ERC721URIStorage,Ownable{
      */
     function interact(uint256 year, uint256 tokenId) public notInteracted(tokenId) returns(string memory) {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "not owner nor approved");
-        interacted[tokenId][_msgSender()] == true;
+        interacted[tokenId][_msgSender()] = true;
         (uint cycle,uint remainder) = ((2022-year) / 12,(2022 - year) % 12);
         if (remainder != 0){
             blessings[tokenId] = status[10];
@@ -178,11 +179,11 @@ contract Tiger is ERC721URIStorage,Ownable{
             strTokenId,
             '","name":"tiger#',
             strTokenId,
-            '","image":',
+            '","image":"',
             image[i],
-            ',"description":"tiger year nft","attributes":[{"trait_type":"status","value":',
+            '","description":"tiger year nft","attributes":[{"trait_type":"status","value":"',
             status[i],
-            ',}]}'
+            '"}]}'
         )
         )
         )
@@ -194,7 +195,7 @@ contract Tiger is ERC721URIStorage,Ownable{
     function tokenURI(uint256 tokenId) public override view returns(string memory) {
         require(ownerOf(tokenId) != address(0), "token not exist");
         for(uint i = 0; i < 16; i++){
-            if(int(block.timestamp) >= yearBegin[i] || int(block.timestamp) <= yearEnd[i]){
+            if(int(block.timestamp) >= yearBegin[i] && int(block.timestamp) <= yearEnd[i]){
                 return calJson(tokenId,index[tokenId]);
             } else {
                 if(interacted[tokenId][_msgSender()]){
@@ -213,12 +214,11 @@ contract Tiger is ERC721URIStorage,Ownable{
         uint256 tokenId
     ) internal override {
         interacted[tokenId][from] = false;
+        blessings[tokenId] = status[0];
+        index[tokenId] = 0;
     }
 
     function _toString(uint256 value) internal pure returns (string memory) {
-        // Inspired by OraclizeAPI's implementation - MIT license
-        // https://github.com/oraclize/ethereum-api/blob/b42146b063c7d6ee1358846c198246239e9360e8/oraclizeAPI_0.4.25.sol
-
         if (value == 0) {
             return "0";
         }
@@ -235,5 +235,9 @@ contract Tiger is ERC721URIStorage,Ownable{
             value /= 10;
         }
         return string(buffer);
+    }
+
+    function getTime() public view returns(uint){
+        return block.timestamp;
     }
 }
