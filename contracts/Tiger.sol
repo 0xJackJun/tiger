@@ -1,10 +1,17 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+<<<<<<< HEAD
 import "../OpenZeppelin/openzeppelin-contracts@4.5.0/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "../OpenZeppelin/openzeppelin-contracts@4.5.0/contracts/access/Ownable.sol";
 import "../OpenZeppelin/openzeppelin-contracts@4.5.0/contracts/utils/Counters.sol";
 import "../OpenZeppelin/openzeppelin-contracts@4.5.0/contracts/utils/Base64.sol";
+=======
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/Base64.sol";
+>>>>>>> 0bde9adb76f2d7fc80fb3d024747e23183d27817
 
 contract Tiger is ERC721URIStorage,Ownable{
     //tokenId counter
