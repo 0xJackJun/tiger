@@ -217,7 +217,7 @@ contract Tiger is ERC721URIStorage,Ownable{
                 continue;
             }
         }
-        return calJson(tokenId,0);
+        return calJson(tokenId,initStatus);
     }
 
     /**
