@@ -117,7 +117,7 @@ contract Tiger is ERC721Enumerable,Ownable{
             revert();
         }
     }
-    
+
     /**
     *@dev calculate the blessings of user
     *@param year year of birth
@@ -132,11 +132,11 @@ contract Tiger is ERC721Enumerable,Ownable{
     /**
     *@dev to conver timestamp to year
      */
-    function timestampToYear(uint _days) public pure returns (uint year) {
+    function timestampToYear(uint timestamp) private pure returns (uint) {
         int OFFSET19700101 = 2440588;
         uint SECONDS_PER_DAY = 24 * 60 * 60;
-        _days = _days / SECONDS_PER_DAY;
-        int __days = int(_days);
+        timestamp = timestamp / SECONDS_PER_DAY;
+        int __days = int(timestamp);
         int L = __days + 68569 + OFFSET19700101;
         int N = 4 * L / 146097;
         L = L - (146097 * N + 3) / 4;
@@ -145,8 +145,7 @@ contract Tiger is ERC721Enumerable,Ownable{
         int _month = 80 * L / 2447;
         L = _month / 11;
         _year = 100 * (N - 49) + _year + L;
-
-        year = uint(_year);
+        return uint(_year);
     }
 
     /**
