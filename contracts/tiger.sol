@@ -8,11 +8,6 @@ import "@openzeppelin/contracts/utils/Base64.sol";
 
 
 contract Tiger is ERC721Enumerable,Ownable{
-    //tokenId counter
-    uint256 private counter;
-    
-    //init price
-    uint256 private price = 10 wei;
 
     //check if address is in whitelist or not
     mapping(address => bool) whitelist;
@@ -23,11 +18,8 @@ contract Tiger is ERC721Enumerable,Ownable{
     //check if address has interacted or not
     mapping (uint256 => bool) interacted;
 
-    //mapping tokenId to blessings
-    mapping (uint256 => string) blessings;
-
-    //mapping tokenId to status index
-    mapping(uint256 => uint) index;
+    // mappping tokenId to birth year
+    mapping (uint256 => uint) birth;
 
     //image url
     string[] private image = [
@@ -43,10 +35,8 @@ contract Tiger is ERC721Enumerable,Ownable{
         'https://arweave.net/ew-vjO2gXu134J2USd5eGfeV9FbNcn5TcejpaKw4Y2A',
         'https://arweave.net/6q1xDOWCrTqterOM9W5VzS02UQWaZDIN6gZpMtfQVLQ'
     ];
-
-    //blessing status
-    string[] private status = ["Init","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","NotTiger"];
-
+    // tokenURI status
+    enum TigerStatus{initStatus,notTigerBless,normalBlessing}
     //tiger year begin
     int[] yearBegin = [int(-2142633600),-1765065600,-1384819200,-1007251200,-627091200,-249436800,128131200,508291200,885945600,1266105600,1643673600,2023920000,2401488000,2779056000,3159302400,3536870400,3917030400,4294684800];
 
@@ -101,80 +91,84 @@ contract Tiger is ERC721Enumerable,Ownable{
         }
     }
 
-    function initAndMint() private{
-        _safeMint(_msgSender(),counter);
-        blessings[counter] = status[0];
-        index[counter] = 0;
-        minted[_msgSender()] = true;
-        counter += 1;
-    }
-    
     /**
-    * @dev mint tiger NFT and initialize status
+    * @dev whitelist mint
      */
-    function mint() public payable notMinted {
-        require(msg.value == price);
+    function whitelistMint() public payable notMinted {
+        require(msg.value == 10 wei);
         if(block.timestamp >= whitelistBegin && block.timestamp <= whitelistEnd){
             require(whitelist[_msgSender()] == true,"caller is not in whitelist");
-            initAndMint();
-        } else if (block.timestamp >= mintBegin) {
-            initAndMint();
+            _safeMint(_msgSender(),totalSupply());
+            minted[_msgSender()] = true;
         } else {
             revert();
         }
     }
 
     /**
+    @dev public sale
+     */
+    function mint() public payable {
+        require(msg.value == 10 wei);
+        if (block.timestamp >= mintBegin) {
+            _safeMint(_msgSender(),totalSupply());
+        } else {
+            revert();
+        }
+    }
+    /**
     *@dev calculate the blessings of user
     *@param year year of birth
     *@param tokenId specific tokenId user owned
-    *@return status generated for user
      */
-    function interact(uint256 year, uint256 tokenId) public notInteracted(tokenId) returns(string memory) {
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "not owner nor approved");
+    function interact(uint256 year, uint256 tokenId) public notInteracted(tokenId) {
+        require(ownerOf(tokenId) == _msgSender(), "not owner");
         interacted[tokenId] = true;
-        (uint cycle,uint remainder) = ((2022-year) / 12,(2022 - year) % 12);
-        if (remainder != 0){
-            blessings[tokenId] = status[10];
-            index[tokenId] = 10;
-        }else if(cycle == 0){
-            blessings[tokenId] = status[1];
-            index[tokenId] = 1;
-        }else if(cycle == 1){
-            blessings[tokenId] = status[2];
-            index[tokenId] = 2;
-        }else if(cycle == 2){
-            blessings[tokenId] = status[3];
-            index[tokenId] = 3;
-        }else if(cycle == 3){
-            blessings[tokenId] = status[4];
-            index[tokenId] = 4;
-        }else if(cycle == 4){
-            blessings[tokenId] = status[5];
-            index[tokenId] = 5;
-        }else if(cycle == 5){
-            blessings[tokenId] = status[6];
-            index[tokenId] = 6;
-        }else if(cycle == 6){
-            blessings[tokenId] = status[7];
-            index[tokenId] = 7;
-        }else if(cycle == 7){
-            blessings[tokenId] = status[8];
-            index[tokenId] = 8;
-        }else if(cycle == 8){
-            blessings[tokenId] = status[9];
-            index[tokenId] = 9;
-        }else{
-            blessings[tokenId] = status[1];
-            index[tokenId] = 1;
-        }
-        return blessings[tokenId];
+        birth[tokenId] = year;
+    }
+
+    /**
+    *@dev to conver timestamp to year
+     */
+    function timestampToYear(uint _days) public pure returns (uint year) {
+        int OFFSET19700101 = 2440588;
+        uint SECONDS_PER_DAY = 24 * 60 * 60;
+        _days = _days / SECONDS_PER_DAY;
+        int __days = int(_days);
+        int L = __days + 68569 + OFFSET19700101;
+        int N = 4 * L / 146097;
+        L = L - (146097 * N + 3) / 4;
+        int _year = 4000 * (L + 1) / 1461001;
+        L = L - 1461 * _year / 4 + 31;
+        int _month = 80 * L / 2447;
+        L = _month / 11;
+        _year = 100 * (N - 49) + _year + L;
+
+        year = uint(_year);
     }
 
     /**
      * @dev calculate retuen json.
      */
-    function calJson(uint256 tokenId,uint i) private view returns (string memory){
+    function calJson(uint256 tokenId,TigerStatus i) private view returns (string memory){
+        uint index;
+        (uint cycle,uint remainder) = ((timestampToYear(block.timestamp)-birth[tokenId]) / 12,(timestampToYear(block.timestamp) - birth[tokenId]) % 12);
+        if (remainder != 0){
+            index = 10;
+        } else if (cycle > 8){
+            index = 1;
+        } else {
+            index = cycle + 1;
+        }
+        if(i==TigerStatus.initStatus){
+            index = 0;
+        }
+        if(i==TigerStatus.notTigerBless){
+            index = 9;
+        }
+        if(i==TigerStatus.normalBlessing && interacted[tokenId] == false){
+            index = 0;
+        }
         string memory strTokenId = _toString(tokenId);
         string memory json = Base64.encode(
             bytes(
@@ -185,10 +179,8 @@ contract Tiger is ERC721Enumerable,Ownable{
             '","name":"tiger#',
             strTokenId,
             '","image":"',
-            image[i],
-            '","description":"tiger year nft","attributes":[{"trait_type":"status","value":"',
-            blessings[tokenId],
-            '"}]}'
+            image[index],
+            '","description":"tiger year nft"}'
         )
         )
         )
@@ -202,22 +194,20 @@ contract Tiger is ERC721Enumerable,Ownable{
      */
     function tokenURI(uint256 tokenId) public override view returns(string memory) {
         require(ownerOf(tokenId) != address(0), "token not exist");
-        uint initStatus = 0;
-        uint notTigerBless = 9;
         for(uint i = 0; i < yearEnd.length; i++){
             if(int(block.timestamp) >= yearBegin[i] && int(block.timestamp) <= yearEnd[i]){
-                return calJson(tokenId,index[tokenId]);
+                return calJson(tokenId,TigerStatus.normalBlessing);
             } else if (int(block.timestamp) > yearEnd[i] && int(block.timestamp) < yearBegin[i+1]){
                 if(interacted[tokenId]){
-                    return calJson(tokenId,notTigerBless);
+                    return calJson(tokenId,TigerStatus.notTigerBless);
                 }else {
-                    return calJson(tokenId,initStatus);
+                    return calJson(tokenId,TigerStatus.initStatus);
                 }
             } else {
                 continue;
             }
         }
-        return calJson(tokenId,initStatus);
+        return calJson(tokenId,TigerStatus.initStatus);
     }
 
     /**
@@ -236,9 +226,9 @@ contract Tiger is ERC721Enumerable,Ownable{
         address to,
         uint256 tokenId
     ) internal override {
+        super._afterTokenTransfer(from, to, tokenId);
         interacted[tokenId] = false;
-        blessings[tokenId] = status[0];
-        index[tokenId] = 0;
+        birth[tokenId] = 0;
     }
 
     /**
