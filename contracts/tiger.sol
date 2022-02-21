@@ -35,8 +35,10 @@ contract Tiger is ERC721Enumerable,Ownable{
         'https://arweave.net/ew-vjO2gXu134J2USd5eGfeV9FbNcn5TcejpaKw4Y2A',
         'https://arweave.net/6q1xDOWCrTqterOM9W5VzS02UQWaZDIN6gZpMtfQVLQ'
     ];
+
     // tokenURI status
     enum TigerStatus{initStatus,notTigerBless,normalBlessing}
+
     //tiger year begin
     int[] yearBegin = [int(-2142633600),-1765065600,-1384819200,-1007251200,-627091200,-249436800,128131200,508291200,885945600,1266105600,1643673600,2023920000,2401488000,2779056000,3159302400,3536870400,3917030400,4294684800];
 
@@ -94,10 +96,9 @@ contract Tiger is ERC721Enumerable,Ownable{
     /**
     * @dev whitelist mint
      */
-    function whitelistMint() public payable notMinted {
+    function whitelistMint() public payable notMinted onlyWhitelist{
         require(msg.value == 10 wei);
         if(block.timestamp >= whitelistBegin && block.timestamp <= whitelistEnd){
-            require(whitelist[_msgSender()] == true,"caller is not in whitelist");
             _safeMint(_msgSender(),totalSupply());
             minted[_msgSender()] = true;
         } else {
@@ -116,6 +117,7 @@ contract Tiger is ERC721Enumerable,Ownable{
             revert();
         }
     }
+    
     /**
     *@dev calculate the blessings of user
     *@param year year of birth
