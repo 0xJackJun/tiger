@@ -46,13 +46,13 @@ contract Tiger is ERC721Enumerable,Ownable{
     int[] yearEnd = [int(-2111990400),-1731916800,-1354262400,-974102400,-596534400,-218880000,161280000,538848000,919094400,1296662400,1674316800,2054476800,2432044800,2812204800,3189859200,3570019200,3947673600];
 
     //mint begin time
-    uint256 mintBegin = 0;
+    uint256 mintBegin = 1645459200;
 
     //whitelist end time
-    uint256 whitelistEnd = 1647950400;
+    uint256 whitelistEnd = 1647957600;
 
     //whitelist begin time
-    uint256 whitelistBegin = 1641957600;
+    uint256 whitelistBegin = 1647950400;
     
 
     constructor(string memory _name, string memory _symbol) 
