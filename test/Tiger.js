@@ -15,6 +15,10 @@ image = [
   'https://arweave.net/ew-vjO2gXu134J2USd5eGfeV9FbNcn5TcejpaKw4Y2A',
   'https://arweave.net/6q1xDOWCrTqterOM9W5VzS02UQWaZDIN6gZpMtfQVLQ'
 ];
+function toTimestamp(year,month,day,hour,minute,second){
+  var datum = new Date(Date.UTC(year,month-1,day,hour,minute,second));
+  return datum.getTime()/1000;
+ }
 
 describe("Tiger Test", function () {
 
@@ -26,7 +30,8 @@ describe("Tiger Test", function () {
       const options = {value: ethers.utils.parseEther("0.000000000000000010")};
       await tigerNFT.mint(options);
       year = 2022-12*i;
-      await tigerNFT.interact(year,i);
+      const Timestamp = toTimestamp(year,5,1,0,0,0);
+      await tigerNFT.interact(Timestamp,i);
       const bs64 = await tigerNFT.tokenURI(i);
       const json = Buffer.from(bs64.slice(29),'base64').toString('ascii')
       const jsonOBJ = JSON.parse(json);
@@ -58,7 +63,8 @@ describe("Tiger Test", function () {
       const options = {value: ethers.utils.parseEther("0.000000000000000010")};
       await tigerNFT.mint(options);
       year = 2022-12*i-1;
-      await tigerNFT.interact(year,i);
+      const Timestamp = toTimestamp(year,5,1,0,0,0);
+      await tigerNFT.interact(Timestamp,i);
       const bs64 = await tigerNFT.tokenURI(i);
       const json = Buffer.from(bs64.slice(29),'base64').toString('ascii')
       const jsonOBJ = JSON.parse(json);
@@ -72,11 +78,12 @@ describe("Tiger Test", function () {
     const [owner] = await ethers.getSigners();
     const Tiger = await ethers.getContractFactory("Tiger");
     const tigerNFT = await Tiger.deploy("Tiger","TG");
-    for(let i = 0; i < 9; i++){
+    for(let i = 0; i < 2; i++){
       const options = {value: ethers.utils.parseEther("0.000000000000000010")};
       await tigerNFT.mint(options);
       year = 2022-12*(i+9);
-      await tigerNFT.interact(year,i);
+      const Timestamp = toTimestamp(year,5,1,0,0,0);
+      await tigerNFT.interact(Timestamp,i);
       const bs64 = await tigerNFT.tokenURI(i);
       const json = Buffer.from(bs64.slice(29),'base64').toString('ascii')
       const jsonOBJ = JSON.parse(json);
