@@ -19,7 +19,7 @@ contract Tiger is ERC721Enumerable,Ownable{
     mapping (uint256 => bool) interacted;
 
     // mappping tokenId to birth year
-    mapping (uint256 => uint) birth;
+    mapping (uint256 => int) birth;
 
     //image url
     string[] private image = [
@@ -36,14 +36,11 @@ contract Tiger is ERC721Enumerable,Ownable{
         'https://arweave.net/6q1xDOWCrTqterOM9W5VzS02UQWaZDIN6gZpMtfQVLQ'
     ];
 
-    // tokenURI status
-    enum TigerStatus{initStatus,notTigerBless,normalBlessing}
-
     //tiger year begin
-    int[] yearBegin = [int(-2142633600),-1765065600,-1384819200,-1007251200,-627091200,-249436800,128131200,508291200,885945600,1266105600,1643673600,2023920000,2401488000,2779056000,3159302400,3536870400,3917030400,4294684800];
+    int[] yearBegin = [int(-1384819200),-1007251200,-627091200,-249436800,128131200,508291200,885945600,1266105600,1643673600,2023920000,2401488000,2779056000,3159302400,3536870400,3917030400,4294684800];
 
     //tiger year end
-    int[] yearEnd = [int(-2111990400),-1731916800,-1354262400,-974102400,-596534400,-218880000,161280000,538848000,919094400,1296662400,1674316800,2054476800,2432044800,2812204800,3189859200,3570019200,3947673600];
+    int[] yearEnd = [int(-1354233600),-974073600,-596505600,-218851200,161308800,538876800,919123200,1296691200,1674345600,2054505600,2432073600,2812233600,3189888000,3570048000,3947702400];
 
     //mint begin time
     uint256 mintBegin = 1645459200;
@@ -72,6 +69,14 @@ contract Tiger is ERC721Enumerable,Ownable{
      */
     modifier notMinted(){
         require(minted[_msgSender()] == false, "already minted");
+        _;
+    }
+
+    /**
+    @dev Guarantees user got 721 or qpassport NFT
+     */
+    modifier Has721OrQpassport(){
+        //todo 721 or qpassport interface
         _;
     }
 
@@ -120,21 +125,21 @@ contract Tiger is ERC721Enumerable,Ownable{
 
     /**
     *@dev calculate the blessings of user
-    *@param year year of birth
+    *@param birthTime biethday timestamp
     *@param tokenId specific tokenId user owned
      */
-    function interact(uint256 year, uint256 tokenId) public notInteracted(tokenId) {
+    function interact(int256 birthTime, uint256 tokenId) public notInteracted(tokenId) {
         require(ownerOf(tokenId) == _msgSender(), "not owner");
         interacted[tokenId] = true;
-        birth[tokenId] = year;
+        birth[tokenId] = birthTime;
     }
 
     /**
     *@dev to conver timestamp to year
      */
-    function timestampToYear(uint timestamp) private pure returns (uint) {
+    function timestampToYear(int timestamp) private pure returns (uint) {
         int OFFSET19700101 = 2440588;
-        uint SECONDS_PER_DAY = 24 * 60 * 60;
+        int SECONDS_PER_DAY = 24 * 60 * 60;
         timestamp = timestamp / SECONDS_PER_DAY;
         int __days = int(timestamp);
         int L = __days + 68569 + OFFSET19700101;
@@ -149,26 +154,41 @@ contract Tiger is ERC721Enumerable,Ownable{
     }
 
     /**
+    *@dev check if user is tiger or not
+     */
+    function isTiger(int birthTime) private view returns(bool){
+        for(uint i = 0; i < yearEnd.length; i++){
+            if(birthTime >= yearBegin[i] && birthTime <= yearEnd[i]){
+                return true;
+            }
+        }
+        return false;
+    }
+    /**
      * @dev calculate retuen json.
      */
-    function calJson(uint256 tokenId,TigerStatus i) private view returns (string memory){
+    function calJson(uint256 tokenId,bool isTigerYear) private view returns (string memory){
         uint index;
-        (uint cycle,uint remainder) = ((timestampToYear(block.timestamp)-birth[tokenId]) / 12,(timestampToYear(block.timestamp) - birth[tokenId]) % 12);
-        if (remainder != 0){
-            index = 10;
-        } else if (cycle > 8){
-            index = 1;
-        } else {
-            index = cycle + 1;
+        if(isTigerYear && interacted[tokenId]){
+            if (isTiger(birth[tokenId])){
+                uint cycle = (timestampToYear(int(block.timestamp))-timestampToYear(birth[tokenId])) / 12;
+                if (cycle > 8){
+                    index = 1;
+                } else {
+                    index = cycle + 1;
+                }
+            } else {
+                index = 10;
+            }
         }
-        if(i==TigerStatus.initStatus){
+        if(isTigerYear && !interacted[tokenId]){
             index = 0;
         }
-        if(i==TigerStatus.notTigerBless){
+        if(!isTigerYear && !interacted[tokenId]){
+            index = 0;
+        }
+        if(!isTigerYear && interacted[tokenId]){
             index = 9;
-        }
-        if(i==TigerStatus.normalBlessing && interacted[tokenId] == false){
-            index = 0;
         }
         string memory strTokenId = _toString(tokenId);
         string memory json = Base64.encode(
@@ -195,20 +215,17 @@ contract Tiger is ERC721Enumerable,Ownable{
      */
     function tokenURI(uint256 tokenId) public override view returns(string memory) {
         require(ownerOf(tokenId) != address(0), "token not exist");
+        bool isTigerYear = true;
         for(uint i = 0; i < yearEnd.length; i++){
             if(int(block.timestamp) >= yearBegin[i] && int(block.timestamp) <= yearEnd[i]){
-                return calJson(tokenId,TigerStatus.normalBlessing);
+                return calJson(tokenId,isTigerYear);
             } else if (int(block.timestamp) > yearEnd[i] && int(block.timestamp) < yearBegin[i+1]){
-                if(interacted[tokenId]){
-                    return calJson(tokenId,TigerStatus.notTigerBless);
-                }else {
-                    return calJson(tokenId,TigerStatus.initStatus);
-                }
+                return calJson(tokenId,!isTigerYear);
             } else {
                 continue;
             }
         }
-        return calJson(tokenId,TigerStatus.initStatus);
+        return calJson(tokenId,!isTigerYear);
     }
 
     /**
@@ -222,12 +239,12 @@ contract Tiger is ERC721Enumerable,Ownable{
      *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
-    function _afterTokenTransfer(
+    function _beforeTokenTransfer(
         address from,
         address to,
         uint256 tokenId
     ) internal override {
-        super._afterTokenTransfer(from, to, tokenId);
+        super._beforeTokenTransfer(from, to, tokenId);
         interacted[tokenId] = false;
         birth[tokenId] = 0;
     }
@@ -263,11 +280,9 @@ contract Tiger is ERC721Enumerable,Ownable{
 
     /**
     *@dev withdraw contract balance
-    *@param amout amout you want to withdraw
      */
-    function withdraw(uint amout) public onlyOwner {
-        require(address(this).balance >= amout);
-        payable(msg.sender).transfer(amout);
+    function withdrawAll() public onlyOwner {
+        payable(msg.sender).transfer(address(this).balance);
     }
 
     /**
